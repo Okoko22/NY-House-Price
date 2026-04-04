@@ -1,2 +1,3 @@
 .vincent/
 .vscode/
+__pycache__/
