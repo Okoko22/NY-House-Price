@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ny-house-price"
+version = "0.1.0"
+description = "A CLI package for NYC house price cleaning, training, and prediction."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+  { name = "Baron Okoko" }
+]
+license = { text = "MIT" }
+keywords = ["nyc", "house price", "machine learning", "cli"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+]
+dependencies = [
+  "numpy",
+  "pandas",
+  "scikit-learn",
+  "matplotlib",
+  "seaborn",
+  "scipy",
+  "optuna",
+  "joblib",
+  "catboost",
+  "lightgbm",
+  "xgboost",
+  "typer",
+]
+
+[project.scripts]
+ny-house-price = "ny_house_price.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["ny_house_price*"]
