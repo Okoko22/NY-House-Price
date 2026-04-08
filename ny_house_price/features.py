@@ -8,6 +8,8 @@ import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.cluster import KMeans
 from sklearn.compose import ColumnTransformer, TransformedTargetRegressor
+from sklearn.impute import SimpleImputer
+from sklearn.metrics.pairwise import rbf_kernel
 from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.preprocessing import (
     FunctionTransformer,
@@ -15,9 +17,7 @@ from sklearn.preprocessing import (
     OrdinalEncoder,
     PowerTransformer,
     RobustScaler,
-    SimpleImputer,
 )
-from sklearn.metrics.pairwise import rbf_kernel
 
 
 @dataclass
@@ -104,8 +104,8 @@ class SanitiseFeatureNames(BaseEstimator, TransformerMixin):
         return X
 
 
-yojohnson_features = ["propertysqft"]
-numeric_features = [
+YEO_JOHNSON_FEATURES = ["propertysqft"]
+NUMERIC_FEATURES = [
     "beds",
     "bath",
     "latitude",
@@ -116,28 +116,30 @@ numeric_features = [
     "zip_listing_count",
     *[f"cluster_sim_{i}" for i in range(10)],
 ]
-ordinal_features = ["size_category"]
-categorical_features = ["borough", "broker_name", "type", "zip_code"]
+ORDINAL_FEATURES = ["size_category"]
+SIZE_CATEGORIES = [["Tiny", "Small", "Medium", "Large", "Luxury"]]
+CATEGORICAL_FEATURES = ["borough", "broker_name", "type", "zip_code"]
 
-preprocessor = ColumnTransformer(
+
+PREPROCESSOR = ColumnTransformer(
     transformers=[
         (
             "yeo",
             make_pipeline(SimpleImputer(strategy="median"), PowerTransformer(method="yeo-johnson")),
-            yeojohnson_features,
+            YEO_JOHNSON_FEATURES,
         ),
         (
             "num",
             make_pipeline(SimpleImputer(strategy="median"), RobustScaler()),
-            numeric_features,
+            NUMERIC_FEATURES,
         ),
         (
             "ord",
             make_pipeline(
                 SimpleImputer(strategy="most_frequent"),
-                OrdinalEncoder(categories=[ordinal_features]),
+                OrdinalEncoder(categories=SIZE_CATEGORIES),
             ),
-            ordinal_features,
+            ORDINAL_FEATURES,
         ),
         (
             "cat",
@@ -145,7 +147,7 @@ preprocessor = ColumnTransformer(
                 SimpleImputer(strategy="constant", fill_value="Unknown"),
                 OneHotEncoder(handle_unknown="ignore", sparse_output=False),
             ),
-            categorical_features,
+            CATEGORICAL_FEATURES,
         ),
     ],
     remainder="drop",
@@ -153,7 +155,7 @@ preprocessor = ColumnTransformer(
 ).set_output(transform="pandas")
 
 
-log_transformer = FunctionTransformer(np.log1p, inverse_func=np.expm1)
+LOG_TRANSFORMER = FunctionTransformer(np.log1p, inverse_func=np.expm1)
 
 
 def build_pipeline(regressor, target_transformer=None):
@@ -162,7 +164,7 @@ def build_pipeline(regressor, target_transformer=None):
     return Pipeline(
         [
             ("fe", FeatureEngineer()),
-            ("pre", preprocessor),
+            ("pre", PREPROCESSOR),
             ("sanitise", SanitiseFeatureNames()),
             (
                 "model",

@@ -1,18 +1,17 @@
 from __future__ import annotations
 
 from pathlib import Path
+
 import joblib
-import numpy as np
 import pandas as pd
-from sklearn.ensemble import HistGradientBoostingRegressor, VotingRegressor
-from sklearn.metrics import mean_absolute_percentage_error
-from sklearn.model_selection import RepeatedKFold, cross_val_score, train_test_split
-from sklearn.svm import SVR
 from catboost import CatBoostRegressor
 from lightgbm import LGBMRegressor
+from sklearn.ensemble import HistGradientBoostingRegressor, VotingRegressor
+from sklearn.metrics import mean_absolute_percentage_error
+from sklearn.model_selection import train_test_split
 from xgboost import XGBRegressor
 
-from .features import build_pipeline, log_transformer
+from .features import build_pipeline
 
 
 def load_clean_data(path: Path) -> pd.DataFrame:
@@ -59,9 +58,8 @@ def _get_base_regressors(use_gpu: bool = False) -> dict[str, object]:
                 n_jobs=-1,
                 random_state=42,
                 verbosity=0,
-                tree_method="gpu_hist",
-                predictor="gpu_predictor",
-                gpu_id=0,
+                tree_method="hist",
+                device="cuda",
             ),
             "CatBoost": CatBoostRegressor(
                 iterations=400,
@@ -112,10 +110,7 @@ def train_ensemble(
     regressors = _get_base_regressors(use_gpu=use_gpu)
     pipelines = {}
     for name, reg in regressors.items():
-        transformer = None
-        if name in {"Linear Regression", "Ridge", "Lasso", "ElasticNet", "SVR"}:
-            transformer = log_transformer
-        pipe = build_pipeline(reg, target_transformer=transformer)
+        pipe = build_pipeline(reg)
         pipe.fit(X_train, y_train)
         pipelines[name] = pipe
 
@@ -127,9 +122,18 @@ def train_ensemble(
 
 
 def evaluate_model(model: object, X_test: pd.DataFrame, y_test: pd.Series) -> dict[str, float]:
-    preds = model.predict(X_test)
-    mape = mean_absolute_percentage_error(y_test, preds)
+    predictions = model.predict(X_test)
+    mape = mean_absolute_percentage_error(y_test, predictions)
     return {"mape": float(mape)}
+
+
+def predict_prices(model: object, df: pd.DataFrame) -> pd.DataFrame:
+    features = df.drop(columns=["price"]) if "price" in df.columns else df.copy()
+    if "zip_code" in features.columns:
+        features["zip_code"] = features["zip_code"].astype(str)
+    output = df.copy()
+    output["predicted_price"] = model.predict(features)
+    return output
 
 
 def save_model(model: object, path: Path) -> None:
