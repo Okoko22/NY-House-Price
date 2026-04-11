@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Tuple
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -18,6 +18,18 @@ DROP_COLS = [
     "LONG_NAME",
     "FORMATTED_ADDRESS",
     "ADMINISTRATIVE_AREA_LEVEL_2",
+]
+
+TYPE_ORDER = [
+    "Co-op for sale",
+    "Condo for sale",
+    "Condop for sale",
+    "Townhouse for sale",
+    "House for sale",
+    "Multi-family home for sale",
+    "Land for sale",
+    "Mobile house for sale",
+    "For sale",
 ]
 
 
@@ -78,7 +90,7 @@ def normalise_broker(name: str) -> str:
     for pattern, canonical in FRANCHISE_PATTERNS:
         if re.search(pattern, lower):
             return canonical
-    return name
+    return str(name)
 
 
 def bucket_broker_column(series: pd.Series, min_count: int = BROKER_MIN_LISTINGS) -> pd.Series:
@@ -122,18 +134,7 @@ def clean_dataset(df: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, int]]:
     )
     df = df.drop(columns=["brokertitle"])
 
-    type_order = [
-        "Co-op for sale",
-        "Condo for sale",
-        "Condop for sale",
-        "Townhouse for sale",
-        "House for sale",
-        "Multi-family home for sale",
-        "Land for sale",
-        "Mobile house for sale",
-        "For sale",
-    ]
-    df["type"] = pd.Categorical(df["type"], categories=type_order, ordered=False)
+    df["type"] = pd.Categorical(df["type"], categories=TYPE_ORDER, ordered=False)
 
     existing_drop = [c for c in [col.lower() for col in DROP_COLS] if c in df.columns]
     df = df.drop(columns=existing_drop)
@@ -153,29 +154,9 @@ def clean_dataset(df: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, int]]:
     return df, report
 
 
-def print_cleaning_report(report: dict[str, int]) -> None:
-    width = 52
-    print("\n" + "=" * width)
-    print("  NY HOUSE DATASET - CLEANING REPORT")
-    print("=" * width)
-    print(f"Initial rows: {report['initial_rows']:>6}")
-    print(f"Dropped duplicates: {report['dropped_duplicates']:>6}")
-    print(f"Dropped sentinel values: {report['dropped_sentinels']:>6}")
-    print(f"Dropped corrupt BATH float: {report['dropped_corrupt_bath']:>6}")
-    n_dropped = report["dropped_nontransactional_types"]
-    print(f"Dropped non-transactional: {n_dropped:>6}")
-    print("-" * width)
-    print(f"Final rows: {report['final_rows']:>6}")
-    print(
-        f"Total removed: {report['total_dropped']:>6} "
-        f"({report['total_dropped']/report['initial_rows']*100:.1f}%)"
-    )
-    print("=" * width + "\n")
-
-
-def load_raw_data(path: str) -> pd.DataFrame:
+def load_raw_data(path: Path) -> pd.DataFrame:
     return pd.read_csv(path)
 
 
-def save_clean_data(df: pd.DataFrame, path: str) -> None:
+def save_clean_data(df: pd.DataFrame, path: Path) -> None:
     df.to_csv(path, index=False)
