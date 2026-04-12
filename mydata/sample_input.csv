@@ -1,0 +1,3 @@
+type,beds,bath,propertysqft,locality,sublocality,latitude,longitude,borough,zip_code,broker_name
+Condo for sale,2,2.0,1400.0,New York,Manhattan,40.761253,-73.97448,Manhattan,10022,Douglas Elliman
+Co-op for sale,2,1.0,978.0,Kings County,Brooklyn,40.615738,-73.969696,Brooklyn,11230,Century 21
