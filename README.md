@@ -1,33 +1,32 @@
 # NY House Price Prediction
 
-A Python package for cleaning, training, evaluating, and predicting New York housing prices using a reusable CLI and modular pipeline.
+NYC house-price pipeline with a modular Python package and Rich-powered CLI.
 
-## Overview
+The code in `ny_house_price/` is a refactor of the notebook workflow in `final_draft.ipynb`, and the CLI is the operational entry point.
 
-This repository contains a production-oriented machine learning package for NYC house price prediction. The code is organized into a package under `ny_house_price/` with separate responsibilities for data cleaning, feature engineering, model training, and command-line execution.
+## What is actually in this repo
 
-## What’s included
+- `ny_house_price/data.py`: data cleaning rules and canonical cleaned dataset output.
+- `ny_house_price/features.py`: `FeatureEngineer` + sklearn preprocessing pipeline.
+- `ny_house_price/models.py`: train/test split, ensemble training, model load/save, prediction wrapper.
+- `ny_house_price/cli.py`: Typer app with Rich output (`clean`, `train`, `evaluate`, `predict`, `run-all`).
+- `ny_house_ensemble.pkl`: pre-trained ensemble artifact used directly by `predict`.
 
-- `ny_house_price/data.py` - raw dataset cleaning, validation, and CSV export
-- `ny_house_price/features.py` - feature engineering and preprocessing pipeline construction
-- `ny_house_price/models.py` - train/test splitting, ensemble training, evaluation, and model persistence
-- `ny_house_price/cli.py` - Typer-based CLI exposing the pipeline commands
-- `pyproject.toml` - package metadata and dependency declarations
-- `uv.lock` - uv-managed lockfile for reproducible dependency resolution
+## How prediction works right now
 
-## Getting started
-
-Use the repository root as the working directory. Dependencies are declared in `pyproject.toml` and managed through `uv`.
+`predict` loads the existing `ny_house_ensemble.pkl` and runs inference on an already-cleaned feature schema (same shape as training features).
 
 ```bash
-uv run python -m ny_house_price.cli --help
+uv run python -m ny_house_price.cli predict --input-path mydata/sample_input.csv
 ```
 
-> Note: This project is designed to run within the existing Python virtual environment managed outside the repository. Do not sync or overwrite that environment here.
+The CLI prints a Rich table preview by default, or writes a CSV if `--output-path` is provided.
+
+> [!IMPORTANT]
+> Input rows for prediction must follow the cleaned feature contract used by the model (`type`, `beds`, `bath`, `propertysqft`, `latitude`, `longitude`, `borough`, `zip_code`, `broker_name`, etc.).  
+> `zip_code` is normalized to string during prediction to match the model pipeline expectations.
 
 ## CLI commands
-
-Run the package via `uv run python -m ny_house_price.cli` and choose one of the available commands.
 
 ```bash
 uv run python -m ny_house_price.cli clean
@@ -37,43 +36,30 @@ uv run python -m ny_house_price.cli predict --input-path mydata/sample_input.csv
 uv run python -m ny_house_price.cli run-all
 ```
 
-### Command descriptions
+## Data and artifact paths
 
-- `clean` - read `mydata/NY-House-Dataset.csv`, clean it, and save the result to `mydata/df_clean.csv`
-- `train` - train the ensemble model from cleaned data and save it to `ny_house_ensemble.pkl`
-- `evaluate` - evaluate the saved model using a hold-out split from the cleaned dataset
-- `predict` - load a saved model and predict prices for a provided input CSV
-- `run-all` - execute clean, train, and evaluate in one flow
+- Raw source data: `mydata/NY-House-Dataset.csv`
+- Cleaned dataset: `mydata/df_clean.csv`
+- Sample inference data: `mydata/sample_input.csv`
+- Ensemble model artifact: `ny_house_ensemble.pkl`
 
-## Recommended workflow
+## Typical usage
 
-1. Clean the dataset:
+```bash
+# 1) Clean raw data
+uv run python -m ny_house_price.cli clean
 
-   ```bash
-   uv run python -m ny_house_price.cli clean
-   ```
+# 2) Train and save a new model
+uv run python -m ny_house_price.cli train
 
-2. Train the model:
+# 3) Evaluate hold-out MAPE
+uv run python -m ny_house_price.cli evaluate
 
-   ```bash
-   uv run python -m ny_house_price.cli train
-   ```
+# 4) Predict from CSV
+uv run python -m ny_house_price.cli predict --input-path mydata/sample_input.csv
+```
 
-3. Evaluate model quality:
+## Environment notes
 
-   ```bash
-   uv run python -m ny_house_price.cli evaluate
-   ```
-
-4. Predict new values from a CSV file:
-
-   ```bash
-   uv run python -m ny_house_price.cli predict --input-path mydata/sample_input.csv
-   ```
-
-## Notes
-
-- The codebase is package-oriented, not notebook-oriented.
-- Model persistence defaults to `ny_house_ensemble.pkl`.
-- Cleaned dataset output defaults to `mydata/df_clean.csv`.
-- The package is meant to be executed through the `ny_house_price` module and uv-managed workflow.
+- Dependencies are pinned in `pyproject.toml` for reproducibility with this model/code path.
+- `uv` is the expected execution path for CLI commands in this repository.
