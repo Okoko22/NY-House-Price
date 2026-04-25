@@ -121,7 +121,9 @@ def train_ensemble(
     return ensemble
 
 
-def evaluate_model(model: object, X_test: pd.DataFrame, y_test: pd.Series) -> dict[str, float]:
+def evaluate_model(
+    model: object, X_test: pd.DataFrame, y_test: pd.Series
+) -> dict[str, float]:
     predictions = model.predict(X_test)
     mape = mean_absolute_percentage_error(y_test, predictions)
     return {"mape": float(mape)}
@@ -137,6 +139,7 @@ def predict_prices(model: object, df: pd.DataFrame) -> pd.DataFrame:
 
 
 def save_model(model: object, path: Path) -> None:
+
     joblib.dump(model, path)
 
 

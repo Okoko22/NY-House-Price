@@ -23,17 +23,22 @@ dependencies = [
   "numpy==2.0.2",
   "pandas==2.3.3",
   "scikit-learn==1.6.1",
+  "scipy==1.16.3",
+  "joblib==1.5.3",
   "matplotlib==3.10.0",
   "seaborn==0.13.2",
-  "scipy==1.16.3",
-  "optuna==4.8.0",
-  "joblib==1.5.3",
   "catboost==1.2.10",
   "lightgbm==4.6.0",
   "xgboost==3.2.0",
+  "optuna==4.8.0",
   "typer",
   "rich",
   "skimpy==0.0.20",
+  "streamlit==1.41.1",
+  "shap==0.46.0",
+  "plotly==5.24.1",
+
+  
 ]
 
 [project.scripts]
